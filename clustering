@@ -1,0 +1,52 @@
+#Kmeans vlustering (May not work)
+df_3 <- as.data.frame(df_1)
+df_2.train <-select(df_2.train, Age, tumorsize, 'node-caps', irradiat)
+df_2.train$`node-caps` <- as.numeric(df_2.train$`node-caps`)
+df_2.train <- mutate(df_2.train, Age=as.numeric(Age), tumorsize=as.numeric(tumorsize), irradiat=as.numeric(irradiat)) 
+
+
+
+#PLot Number of clusters
+wss <- (nrow(df_2.train)-1)*sum(apply(df_2.train,2,var))
+
+for (i in 2:10) 
+  wss[i] <- sum(kmeans(df_2.train, centers=i)$withinss)
+
+plot(1:10, wss, type="b", xlab="Number of Clusters",
+     ylab="Within groups sum of squares")
+
+
+
+
+#PLot Number of clusters
+wss <- (nrow(df_2.train)-1)*sum(apply(df_2.train,2,var))
+
+for (i in 2:10) 
+  wss[i] <- sum(kmeans(df_2.train, centers=i)$withinss)
+
+plot(1:10, wss, type="b", xlab="Number of Clusters",
+     ylab="Within groups sum of squares")
+
+# K-Means Cluster Analysis
+fit <- kmeans(df_2.train, 2) # 5 cluster solution
+# get cluster means
+aggregate(df_2.train,by=list(fit$cluster),FUN=mean)
+# append cluster assignment
+df_2.train <- data.frame(df_2.train, fit$cluster)
+results <- kmeans(df_2.train, 2)
+results$size
+results$cluster
+table(df_2$Class, results$cluster)
+
+
+
+
+
+
+# Ward Hierarchical Clustering
+d <- dist(df_2.train, method = "euclidean") # distance matrix
+fit <- hclust(d, method="ward.D2")
+plot(fit) # display dendogram
+groups <- cutree(fit, k=2) # cut tree into 5 clusters
+# draw dendogram with red borders around the 5 clusters
+rect.hclust(fit, k=2, border="red")

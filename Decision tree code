@@ -1,0 +1,28 @@
+#Selecting only meaningful data
+df_2 <-select(df_2, Age, tumorsize, 'node-caps', irradiat)
+df_2 <- mutate(df_2, Age=factor(Age), tumorsize=factor(tumorsize), irradiat=factor(irradiat))
+
+df_2.index <- sample(3:nrow(df_2), 0.7*nrow(df_2))
+df_2.train <- df_2[df_2.index,]
+dim(df_2.train)
+## select the 30% left as the testing data
+df_2.test <- df_2[-df_2.index,]
+dim(df_2.test)
+
+install.packages("rpart")
+library(rpart)
+install.packages("rpart.plot")
+library(rpart.plot)
+#training the decision tree classifier
+
+tree <- rpart(irradiat ~.,data = df_2.train)
+
+#Predictions
+tree.irradiat.predicted <- predict(tree, df_2.test, type='class')
+
+#Confusion Matrix for evaluating the model
+
+confusionMatrix(tree.irradiat.predicted, df_2.test$irradiat)
+
+#Vis the tree
+prp(tree)

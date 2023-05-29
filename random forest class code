@@ -1,0 +1,81 @@
+#Train Model -Random Forest
+#Selecting only meaningful data
+df_2.train <-select(df_2.train, Age, tumorsize, irradiat)
+#Random Forest
+# Check for proportion of labels in both training and test split
+prop.table(table(df_2.train$irradiat))
+prop.table(table(df_2.test$irradiat))
+
+df_2.train$irradiat <- as.factor(df_2.train$irradiat)
+df_2.test$irradiat <- as.factor(df_2.test$irradiat)
+
+## Fit decision model to training set DATA EXPLORATION PART
+df_1.rf.model <- randomForest(df_2.train$irradiat ~ ., data=df_2.train, importance=TRUE, ntree=100, mtry=2)
+print(df_1.rf.model)
+
+## show variable importance
+importance(df_1.rf.model)
+varImpPlot(df_1.rf.model)
+
+#perform 10-fold cross validation repeated 3 
+train.control <- trainControl(method = "repeatedcv",
+                              number = 10,
+                              repeats = 3,
+                              search = "grid",
+                              allowParallel = T)
+
+#grid search
+tune.grid <- expand.grid(mtry = c(2:6))
+
+View(tune.grid)
+
+
+cl <- makePSOCKcluster(8)
+registerDoParallel(cl)
+
+install.packages('e1071', dependencies=TRUE)
+
+# Train the randomforest model using 10-fold CV repeated 3 times 
+# and a hyperparameter grid search to train the optimal model.
+caret.cv <- train(irradiat ~ ., 
+                  data = df_2.train,
+                  method = "rf",
+                  tuneGrid = tune.grid,
+                  trControl = train.control)
+
+caret.cv
+
+stopCluster(cl)
+
+# Make predictions on the test set using a randomForest model 
+# trained on all  rows of the training set using the 
+# found optimal hyperparameter values.
+preds.rf.caret <- predict(caret.cv, df_2.test)
+
+table(preds.rf.caret,df_2.test$irradiat)
+
+#Boosting 
+#========================================================================================
+#Everythin will be same as Random Forest, but there are specific model parameters we need to input 
+#for the exapnd.grid in boosting
+
+tune.grid.b <- expand.grid(n.trees = c(100,500), interaction.depth=c(1:3), shrinkage=c(0.01,0.1), n.minobsinnode=c(20))
+
+View(tune.grid.b)
+
+#Register parallel cores
+cl <- makePSOCKcluster(8)
+registerDoParallel(cl)
+
+caret.cv.b <- train(irradiat ~ ., 
+                    data = df_2.train,
+                    method = "gbm",
+                    tuneGrid = tune.grid.b,
+                    trControl = train.control)
+
+caret.cv.b
+
+stopCluster(cl)
+
+# insert serial backend, otherwise error in repetetive tasks
+registerDoSEQ()
